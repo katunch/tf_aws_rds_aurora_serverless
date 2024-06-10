@@ -33,9 +33,11 @@ No modules.
 |------|-------------|------|---------|:--------:|
 | <a name="input_admin_username"></a> [admin\_username](#input\_admin\_username) | The username for the RDS admin user | `string` | `"admin"` | no |
 | <a name="input_applicationName"></a> [applicationName](#input\_applicationName) | The name of the application | `string` | n/a | yes |
+| <a name="input_cluster_backup_retention_period"></a> [cluster\_backup\_retention\_period](#input\_cluster\_backup\_retention\_period) | The number of days to retain backups for the Aurora Serverless v2 cluster | `number` | `7` | no |
 | <a name="input_db_name"></a> [db\_name](#input\_db\_name) | The name of the database | `string` | `"ebdb"` | no |
+| <a name="input_performance_insights_enabled"></a> [performance\_insights\_enabled](#input\_performance\_insights\_enabled) | Enable Performance Insights for the RDS cluster. Default is false. Set at least 2ACU as minimum capacity for Performance Insights to work. | `bool` | `false` | no |
+| <a name="input_serverlessv2_max_capacity"></a> [serverlessv2\_max\_capacity](#input\_serverlessv2\_max\_capacity) | The maximum capacity for the Aurora Serverless v2 cluster | `number` | `1` | no |
 | <a name="input_serverlessv2_min_capacity"></a> [serverlessv2\_min\_capacity](#input\_serverlessv2\_min\_capacity) | The minimum capacity for the Aurora Serverless v2 cluster | `number` | `0.5` | no |
-| <a name="input_serverlsessv2_max_capacity"></a> [serverlsessv2\_max\_capacity](#input\_serverlsessv2\_max\_capacity) | The maximum capacity for the Aurora Serverless v2 cluster | `number` | `1` | no |
 | <a name="input_vpc_id"></a> [vpc\_id](#input\_vpc\_id) | The ID of the VPC | `string` | n/a | yes |
 
 ## Outputs
