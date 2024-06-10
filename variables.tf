@@ -19,7 +19,7 @@ variable "db_name" {
   default     = "ebdb"
 }
 
-variable "serverlsessv2_max_capacity" {
+variable "serverlessv2_max_capacity" {
   description = "The maximum capacity for the Aurora Serverless v2 cluster"
   type        = number
   default     = 1.0
