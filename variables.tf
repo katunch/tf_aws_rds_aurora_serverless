@@ -30,3 +30,15 @@ variable "serverlessv2_min_capacity" {
   type        = number
   default     = 0.5
 }
+
+variable "cluster_backup_retention_period" {
+  description = "The number of days to retain backups for the Aurora Serverless v2 cluster"
+  type        = number
+  default     = 7
+}
+
+variable "performance_insights_enabled" {
+  description = "Enable Performance Insights for the RDS cluster. Default is false. Set at least 2ACU as minimum capacity for Performance Insights to work."
+  type        = bool
+  default     = false
+}

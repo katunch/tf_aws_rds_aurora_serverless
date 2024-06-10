@@ -23,12 +23,14 @@ resource "aws_security_group" "rds_access" {
   vpc_id      = data.aws_vpc.selected.id
 
   ingress {
+    description = "Allow MySQL/Aurora connections from VPC"
     from_port   = 3306
     to_port     = 3306
     protocol    = "tcp"
     cidr_blocks = [data.aws_vpc.selected.cidr_block]
   }
   egress {
+    description = "Allow all traffic to VPC"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -71,6 +73,8 @@ resource "aws_rds_cluster" "prod" {
   vpc_security_group_ids           = [aws_security_group.rds_access.id]
   db_cluster_parameter_group_name  = aws_rds_cluster_parameter_group.default.name
   db_instance_parameter_group_name = aws_db_parameter_group.default.name
+  backup_retention_period          = var.cluster_backup_retention_period
+  deletion_protection              = true
 
   serverlessv2_scaling_configuration {
     max_capacity = var.serverlsessv2_max_capacity
@@ -80,11 +84,12 @@ resource "aws_rds_cluster" "prod" {
 }
 
 resource "aws_rds_cluster_instance" "instances" {
-  cluster_identifier      = aws_rds_cluster.prod.id
-  identifier              = "${aws_rds_cluster.prod.id}-instance"
-  instance_class          = "db.serverless"
-  engine                  = aws_rds_cluster.prod.engine
-  engine_version          = aws_rds_cluster.prod.engine_version
-  db_parameter_group_name = aws_db_parameter_group.default.name
-  depends_on              = [aws_rds_cluster.prod]
+  cluster_identifier           = aws_rds_cluster.prod.id
+  identifier                   = "${aws_rds_cluster.prod.id}-instance"
+  instance_class               = "db.serverless"
+  engine                       = aws_rds_cluster.prod.engine
+  engine_version               = aws_rds_cluster.prod.engine_version
+  db_parameter_group_name      = aws_db_parameter_group.default.name
+  depends_on                   = [aws_rds_cluster.prod]
+  performance_insights_enabled = var.performance_insights_enabled
 }
