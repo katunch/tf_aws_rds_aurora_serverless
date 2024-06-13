@@ -1,5 +1,6 @@
 # tf_aws_rds_aurora_serverless
 ![Overview](./docs/overview.jpg)
+
 The tf_aws_rds_aurora_serverless repository provides Terraform scripts to deploy an Amazon RDS Aurora MySQL 8 Serverless database. It sets up the following:
 
 	•	RDS Cluster: Aurora MySQL 8 Serverless with customizable capacity.
