@@ -1,3 +1,32 @@
+# tf_aws_rds_aurora_serverless
+![Overview](./docs/overview.jpg)
+The tf_aws_rds_aurora_serverless repository provides Terraform scripts to deploy an Amazon RDS Aurora MySQL 8 Serverless database. It sets up the following:
+
+	•	RDS Cluster: Aurora MySQL 8 Serverless with customizable capacity.
+	•	Security Group: Controls access to the RDS cluster.
+	•	Parameter Groups: For configuring database parameters.
+	•	VPC Integration: Links the RDS cluster to a specified VPC.
+
+Key Inputs:
+
+	•	Application name
+	•	VPC ID
+	•	Admin username
+	•	Database name
+
+Outputs:
+
+	•	Database name
+	•	Admin credentials
+	•	Cluster endpoint
+	•	Security group ID
+
+## Security considerations
+This Terraform was validated using [Trivy](https://aquasecurity.github.io/trivy/v0.52/). You'll find the report in [SECURITY](./SECURITY). 
+
+* Performance Insights are disable as default since the ACU is set to minimum as default. This can be overwritten through variables.
+* It's intended not to use customer managed encryption keys in the current version.
+
 ## Requirements
 
 | Name | Version |
