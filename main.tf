@@ -84,7 +84,7 @@ resource "aws_rds_cluster" "prod" {
   deletion_protection              = true
 
   serverlessv2_scaling_configuration {
-    max_capacity = var.serverlsessv2_max_capacity
+    max_capacity = var.serverlessv2_max_capacity
     min_capacity = var.serverlessv2_min_capacity
   }
   depends_on = [aws_security_group.rds_access]

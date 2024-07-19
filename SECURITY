@@ -1,0 +1,53 @@
+
+main.tf (terraform)
+===================
+Tests: 8 (SUCCESSES: 6, FAILURES: 2, EXCEPTIONS: 0)
+Failures: 2 (UNKNOWN: 0, LOW: 1, MEDIUM: 0, HIGH: 1, CRITICAL: 0)
+
+HIGH: Cluster does not specify a customer managed key for storage encryption.
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+Encryption should be enabled for an RDS Aurora cluster. 
+
+When enabling encryption by setting the kms_key_id, the storage_encrypted must also be set to true.
+
+See https://avd.aquasec.com/misconfig/avd-aws-0079
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ main.tf:64-84
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  64 ┌ resource "aws_rds_cluster" "prod" {
+  65 │   cluster_identifier               = "${var.applicationName}-cluster"
+  66 │   engine                           = "aurora-mysql"
+  67 │   engine_mode                      = "provisioned"
+  68 │   engine_version                   = "8.0.mysql_aurora.3.06.0"
+  69 │   database_name                    = var.db_name
+  70 │   master_username                  = var.admin_username
+  71 │   master_password                  = random_string.rds_password.result
+  72 └   storage_encrypted                = true
+  ..   
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+LOW: Instance does not have performance insights enabled.
+══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+Enabling Performance insights allows for greater depth in monitoring data.
+		
+For example, information about active sessions could help diagose a compromise or assist in the investigation
+
+See https://avd.aquasec.com/misconfig/avd-aws-0133
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ main.tf:94
+   via main.tf:86-95 (aws_rds_cluster_instance.instances)
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  86   resource "aws_rds_cluster_instance" "instances" {
+  87     cluster_identifier           = aws_rds_cluster.prod.id
+  88     identifier                   = "${aws_rds_cluster.prod.id}-instance"
+  89     instance_class               = "db.serverless"
+  90     engine                       = aws_rds_cluster.prod.engine
+  91     engine_version               = aws_rds_cluster.prod.engine_version
+  92     db_parameter_group_name      = aws_db_parameter_group.default.name
+  93     depends_on                   = [aws_rds_cluster.prod]
+  94 [   performance_insights_enabled = var.performance_insights_enabled
+  95   }
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
