@@ -8,6 +8,11 @@ variable "vpc_id" {
   type        = string
 }
 
+variable "vpc_subnet_ids" {
+  description = "The IDs of the subnets to place the db instances"
+  type        = list(string)
+}
+
 variable "admin_username" {
   description = "The username for the RDS admin user"
   type        = string
