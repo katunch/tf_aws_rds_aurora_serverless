@@ -38,7 +38,6 @@ resource "aws_security_group" "rds_access" {
   }
 }
 
-
 resource "aws_rds_cluster_parameter_group" "default" {
   name        = var.applicationName
   family      = "aurora-mysql8.0"
@@ -61,6 +60,13 @@ resource "aws_db_parameter_group" "default" {
   }
 }
 
+
+resource "aws_db_subnet_group" "default" {
+  name        = "${var.applicationName}-private"
+  description = "Subnet group for ${var.applicationName} database instances."
+  subnet_ids  = var.vpc_subnet_ids
+}
+
 resource "aws_rds_cluster" "prod" {
   cluster_identifier               = "${var.applicationName}-cluster"
   engine                           = "aurora-mysql"
@@ -73,6 +79,7 @@ resource "aws_rds_cluster" "prod" {
   vpc_security_group_ids           = [aws_security_group.rds_access.id]
   db_cluster_parameter_group_name  = aws_rds_cluster_parameter_group.default.name
   db_instance_parameter_group_name = aws_db_parameter_group.default.name
+  db_subnet_group_name             = aws_db_subnet_group.default.name
   backup_retention_period          = var.cluster_backup_retention_period
   deletion_protection              = true
 
@@ -92,4 +99,5 @@ resource "aws_rds_cluster_instance" "instances" {
   db_parameter_group_name      = aws_db_parameter_group.default.name
   depends_on                   = [aws_rds_cluster.prod]
   performance_insights_enabled = var.performance_insights_enabled
+  db_subnet_group_name         = aws_db_subnet_group.default.name
 }
