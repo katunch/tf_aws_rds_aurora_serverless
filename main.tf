@@ -62,7 +62,7 @@ resource "aws_rds_cluster_role_association" "s3_integration" {
   count = var.s3_import_role_arn != null ? 1 : 0
 
   db_cluster_identifier = aws_rds_cluster.prod.id
-  feature_name          = ""
+  feature_name          = "" # see https://github.com/terraform-aws-modules/terraform-aws-rds-aurora/issues/273#issuecomment-1062890486
   role_arn              = var.s3_import_role_arn
 
   depends_on = [aws_rds_cluster.prod]
