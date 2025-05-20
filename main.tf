@@ -110,3 +110,17 @@ resource "aws_rds_cluster_instance" "instances" {
   performance_insights_enabled = var.performance_insights_enabled
   db_subnet_group_name         = aws_db_subnet_group.default.name
 }
+
+resource "aws_rds_cluster_role_association" "s3_integration" {
+  # Create this association only if an s3_import_role_arn is provided
+  count = var.s3_import_role_arn != null ? 1 : 0
+
+  db_cluster_identifier = aws_rds_cluster.prod.id
+  feature_name          = "s3Import" # For Aurora, this is typically for importing data from S3.
+                                    # Other possible values exist for other RDS engines or features (e.g., s3Export).
+  role_arn              = var.s3_import_role_arn
+
+  # Explicitly depend on the cluster. The role is created outside this module,
+  # so Terraform will know the role_arn value.
+  depends_on = [aws_rds_cluster.prod]
+}
