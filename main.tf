@@ -42,6 +42,7 @@ resource "aws_rds_cluster_parameter_group" "default" {
   name        = var.applicationName
   family      = "aurora-mysql8.0"
   description = "Cluster Parameter group for ${var.applicationName}"
+
   parameter {
     name         = "max_allowed_packet"
     value        = "1073741824"
@@ -49,20 +50,20 @@ resource "aws_rds_cluster_parameter_group" "default" {
   }
 
   dynamic "parameter" {
-    for_each = var.s3_import_role_arn != null ? ["aws_default_s3_role"] : []
+    for_each = var.enable_s3_import_integration && var.s3_import_role_arn != null ? { "aws_default_s3_role" = var.s3_import_role_arn } : {}
     content {
-      name         = parameter.value
-      value        = var.s3_import_role_arn
+      name         = parameter.key
+      value        = parameter.value
       apply_method = "pending-reboot"
     }
   }
 }
 
 resource "aws_rds_cluster_role_association" "s3_integration" {
-  count = var.s3_import_role_arn != null ? 1 : 0
+  count = var.enable_s3_import_integration ? 1 : 0
 
   db_cluster_identifier = aws_rds_cluster.prod.id
-  feature_name          = "" # see https://github.com/terraform-aws-modules/terraform-aws-rds-aurora/issues/273#issuecomment-1062890486
+  feature_name = "" # see https://github.com/terraform-aws-modules/terraform-aws-rds-aurora/issues/273#issuecomment-1062890486
   role_arn              = var.s3_import_role_arn
 
   depends_on = [aws_rds_cluster.prod]

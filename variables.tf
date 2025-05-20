@@ -53,3 +53,9 @@ variable "s3_import_role_arn" {
   type        = string
   default     = null
 }
+
+variable "enable_s3_import_integration" {
+  description = "If true, enables the S3 import integration by associating the s3_import_role_arn and setting the necessary cluster parameter. s3_import_role_arn must be provided if this is true."
+  type        = bool
+  default     = false
+}
