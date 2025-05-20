@@ -115,7 +115,7 @@ resource "aws_rds_cluster_role_association" "s3_integration" {
   count = var.s3_import_role_arn != null ? 1 : 0
 
   db_cluster_identifier = aws_rds_cluster.prod.id
-  # feature_name          = ""
+  feature_name          = ""
   role_arn = var.s3_import_role_arn
 
   depends_on = [aws_rds_cluster.prod]
