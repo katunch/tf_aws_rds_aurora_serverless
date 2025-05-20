@@ -47,6 +47,15 @@ resource "aws_rds_cluster_parameter_group" "default" {
     value        = "1073741824"
     apply_method = "pending-reboot"
   }
+
+  dynamic "parameter" {
+    for_each = var.s3_import_role_arn != null ? ["aurora_load_from_s3_role", "aws_default_s3_role"] : []
+    content {
+      name         = parameter.value
+      value        = var.s3_import_role_arn
+      apply_method = "pending-reboot"
+    }
+  }
 }
 
 resource "aws_db_parameter_group" "default" {
@@ -76,7 +85,7 @@ resource "aws_rds_cluster" "prod" {
   master_username                  = var.admin_username
   master_password                  = random_string.rds_password.result
   storage_encrypted                = true
-  vpc_security_group_ids           = [aws_security_group.rds_access.id]
+  vpc_security_group_ids = [aws_security_group.rds_access.id]
   db_cluster_parameter_group_name  = aws_rds_cluster_parameter_group.default.name
   db_instance_parameter_group_name = aws_db_parameter_group.default.name
   db_subnet_group_name             = aws_db_subnet_group.default.name
@@ -97,7 +106,7 @@ resource "aws_rds_cluster_instance" "instances" {
   engine                       = aws_rds_cluster.prod.engine
   engine_version               = aws_rds_cluster.prod.engine_version
   db_parameter_group_name      = aws_db_parameter_group.default.name
-  depends_on                   = [aws_rds_cluster.prod]
+  depends_on = [aws_rds_cluster.prod]
   performance_insights_enabled = var.performance_insights_enabled
   db_subnet_group_name         = aws_db_subnet_group.default.name
 }

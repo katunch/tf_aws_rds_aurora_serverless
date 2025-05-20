@@ -47,3 +47,9 @@ variable "performance_insights_enabled" {
   type        = bool
   default     = false
 }
+
+variable "s3_import_role_arn" {
+  description = "Optional. The ARN of the IAM role to be used for S3 import operations (e.g., LOAD DATA FROM S3). This will be set for aurora_load_from_s3_role and aws_default_s3_role."
+  type        = string
+  default     = null
+}
