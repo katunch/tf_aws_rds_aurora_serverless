@@ -58,6 +58,16 @@ resource "aws_rds_cluster_parameter_group" "default" {
   }
 }
 
+resource "aws_rds_cluster_role_association" "s3_integration" {
+  count = var.s3_import_role_arn != null ? 1 : 0
+
+  db_cluster_identifier = aws_rds_cluster.prod.id
+  feature_name          = ""
+  role_arn              = var.s3_import_role_arn
+
+  depends_on = [aws_rds_cluster.prod]
+}
+
 resource "aws_db_parameter_group" "default" {
   name        = var.applicationName
   family      = "aurora-mysql8.0"
@@ -109,14 +119,4 @@ resource "aws_rds_cluster_instance" "instances" {
   depends_on = [aws_rds_cluster.prod]
   performance_insights_enabled = var.performance_insights_enabled
   db_subnet_group_name         = aws_db_subnet_group.default.name
-}
-
-resource "aws_rds_cluster_role_association" "s3_integration" {
-  count = var.s3_import_role_arn != null ? 1 : 0
-
-  db_cluster_identifier = aws_rds_cluster.prod.id
-  feature_name          = ""
-  role_arn = var.s3_import_role_arn
-
-  depends_on = [aws_rds_cluster.prod]
 }
