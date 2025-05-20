@@ -49,7 +49,7 @@ resource "aws_rds_cluster_parameter_group" "default" {
   }
 
   dynamic "parameter" {
-    for_each = var.s3_import_role_arn != null ? ["aurora_load_from_s3_role", "aws_default_s3_role"] : []
+    for_each = var.s3_import_role_arn != null ? ["aws_default_s3_role"] : []
     content {
       name         = parameter.value
       value        = var.s3_import_role_arn
