@@ -47,3 +47,9 @@ variable "performance_insights_enabled" {
   type        = bool
   default     = false
 }
+
+variable "engine_version" {
+  description = "The version of the Aurora MySQL engine to use"
+  type        = string
+  default     = "8.0.mysql_aurora.3.08.2"
+}
