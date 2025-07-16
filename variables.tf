@@ -59,3 +59,9 @@ variable "enable_s3_import_integration" {
   type        = bool
   default     = false
 }
+
+variable "aurora_mysql_engine_version" {
+  description = "The version of the Aurora MySQL engine to use"
+  type        = string
+  default     = "8.0.mysql_aurora.3.08.2"
+}
