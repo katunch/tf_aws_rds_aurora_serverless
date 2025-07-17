@@ -48,6 +48,18 @@ variable "performance_insights_enabled" {
   default     = false
 }
 
+variable "s3_import_role_arn" {
+  description = "Optional. The ARN of the IAM role to be used for S3 import operations (e.g., LOAD DATA FROM S3). This will be set for aurora_load_from_s3_role and aws_default_s3_role."
+  type        = string
+  default     = null
+}
+
+variable "enable_s3_import_integration" {
+  description = "If true, enables the S3 import integration by associating the s3_import_role_arn and setting the necessary cluster parameter. s3_import_role_arn must be provided if this is true."
+  type        = bool
+  default     = false
+}
+
 variable "aurora_mysql_engine_version" {
   description = "The version of the Aurora MySQL engine to use"
   type        = string
