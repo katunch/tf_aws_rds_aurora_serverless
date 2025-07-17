@@ -87,7 +87,8 @@ resource "aws_rds_cluster" "prod" {
     max_capacity = var.serverlessv2_max_capacity
     min_capacity = var.serverlessv2_min_capacity
   }
-  depends_on = [aws_security_group.rds_access]
+  performance_insights_enabled = var.performance_insights_enabled
+  depends_on                   = [aws_security_group.rds_access]
 }
 
 resource "aws_rds_cluster_instance" "instances" {
