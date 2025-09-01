@@ -2,15 +2,15 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5"
+      version = ">= 5"
     }
   }
 }
 
 resource "random_string" "rds_password" {
   length           = 16
-  special          = true
-  override_special = "_%@"
+  special          = false
+  override_special = "_%@ "
 }
 
 data "aws_vpc" "selected" {
