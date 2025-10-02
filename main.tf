@@ -7,6 +7,18 @@ terraform {
   }
 }
 
+locals {
+  enable_s3_import = length(var.s3_import_bucket_names) > 0
+}
+
+data "aws_region" "current" {}
+
+data "aws_ec2_managed_prefix_list" "s3" {
+  # S3 Prefix List for Gateway Endpoint Access
+  count = local.enable_s3_import ? 1 : 0
+  name  = "com.amazonaws.${data.aws_region.current.name}.s3"
+}
+
 resource "random_string" "rds_password" {
   length           = 16
   special          = true
@@ -39,6 +51,17 @@ resource "aws_security_group" "rds_access" {
   }
 
   dynamic "egress" {
+    for_each = local.enable_s3_import ? [1] : []
+    content {
+      description = "Allow RDS outbound to S3 Gateway Endpoint for data import"
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      prefix_list_ids = [data.aws_ec2_managed_prefix_list.s3[0].id]
+    }
+  }
+
+  dynamic "egress" {
     for_each = var.additional_egress_rules
     content {
       description = egress.value.description
@@ -66,23 +89,13 @@ resource "aws_rds_cluster_parameter_group" "default" {
   }
 
   dynamic "parameter" {
-    for_each = (var.enable_s3_import_integration && var.s3_import_role_arn != null) ? { "aws_default_s3_role" = var.s3_import_role_arn } : {}
+    for_each = local.enable_s3_import ? { "aws_default_s3_role" = aws_iam_role.rds_s3_import[0].arn } : {}
     content {
       name         = parameter.key
       value        = parameter.value
       apply_method = "pending-reboot"
     }
   }
-}
-
-resource "aws_rds_cluster_role_association" "s3_integration" {
-  count = var.enable_s3_import_integration ? 1 : 0
-
-  db_cluster_identifier = aws_rds_cluster.prod.id
-  feature_name = "" # see https://github.com/terraform-aws-modules/terraform-aws-rds-aurora/issues/273#issuecomment-1062890486
-  role_arn              = var.s3_import_role_arn
-
-  depends_on = [aws_rds_cluster.prod]
 }
 
 resource "aws_db_parameter_group" "default" {
@@ -97,12 +110,64 @@ resource "aws_db_parameter_group" "default" {
   }
 }
 
+# --- DB Subnet Group ---
 resource "aws_db_subnet_group" "default" {
   name        = "${var.applicationName}-private"
   description = "Subnet group for ${var.applicationName} database instances."
   subnet_ids  = var.vpc_subnet_ids
 }
 
+# --- IAM Role for S3 Import ---
+resource "aws_iam_role" "rds_s3_import" {
+  count = local.enable_s3_import ? 1 : 0
+  name  = "${var.applicationName}-rds-s3-import-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "rds.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# --- IAM Policy for S3 Import ---
+resource "aws_iam_policy" "rds_s3_import" {
+  count       = local.enable_s3_import ? 1 : 0
+  name        = "${var.applicationName}-rds-s3-import-policy"
+  description = "Allows RDS to read from specific S3 buckets for import"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = [
+          "s3:GetObject",
+          "s3:ListBucket"
+        ],
+        Effect = "Allow",
+        Resource = concat(
+          [for bucket in var.s3_import_bucket_names : "arn:aws:s3:::${bucket}"],
+          [for bucket in var.s3_import_bucket_names : "arn:aws:s3:::${bucket}/*"]
+        )
+      }
+    ]
+  })
+}
+
+# --- Attach Policy to Role ---
+resource "aws_iam_role_policy_attachment" "rds_s3_import" {
+  count      = local.enable_s3_import ? 1 : 0
+  role       = aws_iam_role.rds_s3_import[0].name
+  policy_arn = aws_iam_policy.rds_s3_import[0].arn
+}
+
+# --- RDS Cluster ---
 resource "aws_rds_cluster" "prod" {
   cluster_identifier               = "${var.applicationName}-cluster"
   engine                           = "aurora-mysql"
@@ -127,6 +192,19 @@ resource "aws_rds_cluster" "prod" {
   depends_on = [aws_security_group.rds_access]
 }
 
+resource "aws_rds_cluster_role_association" "s3_integration" {
+  count = local.enable_s3_import ? 1 : 0
+
+  db_cluster_identifier = aws_rds_cluster.prod.id
+  feature_name          = "" # see https://github.com/terraform-aws-modules/terraform-aws-rds-aurora/issues/273#issuecomment-1062890486
+  role_arn              = aws_iam_role.rds_s3_import[0].arn
+
+  depends_on = [
+    aws_rds_cluster.prod,
+    aws_iam_role_policy_attachment.rds_s3_import
+  ]
+}
+
 resource "aws_rds_cluster_instance" "instances" {
   cluster_identifier           = aws_rds_cluster.prod.id
   identifier                   = "${aws_rds_cluster.prod.id}-instance"
@@ -134,7 +212,8 @@ resource "aws_rds_cluster_instance" "instances" {
   engine                       = aws_rds_cluster.prod.engine
   engine_version               = aws_rds_cluster.prod.engine_version
   db_parameter_group_name      = aws_db_parameter_group.default.name
-  depends_on = [aws_rds_cluster.prod]
   performance_insights_enabled = var.performance_insights_enabled
   db_subnet_group_name         = aws_db_subnet_group.default.name
+
+  depends_on = [aws_rds_cluster.prod]
 }
