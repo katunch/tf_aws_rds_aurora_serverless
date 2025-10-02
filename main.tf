@@ -29,12 +29,28 @@ resource "aws_security_group" "rds_access" {
     protocol    = "tcp"
     cidr_blocks = [data.aws_vpc.selected.cidr_block]
   }
+
   egress {
     description = "Allow all traffic to VPC"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = [data.aws_vpc.selected.cidr_block]
+  }
+
+  dynamic "egress" {
+    for_each = var.additional_egress_rules
+    content {
+      description = egress.value.description
+      from_port   = egress.value.from_port
+      to_port     = egress.value.to_port
+      protocol    = egress.value.protocol
+      cidr_blocks = lookup(egress.value, "cidr_blocks", [])
+      ipv6_cidr_blocks = lookup(egress.value, "ipv6_cidr_blocks", [])
+      prefix_list_ids = lookup(egress.value, "prefix_list_ids", [])
+      security_groups = lookup(egress.value, "security_groups", [])
+      self = lookup(egress.value, "self", false)
+    }
   }
 }
 
@@ -50,7 +66,8 @@ resource "aws_rds_cluster_parameter_group" "default" {
   }
 
   dynamic "parameter" {
-    for_each = var.enable_s3_import_integration && var.s3_import_role_arn != null ? { "aws_default_s3_role" = var.s3_import_role_arn } : {}
+    for_each = var.enable_s3_import_integration && var.s3_import_role_arn != null ?
+      { "aws_default_s3_role" = var.s3_import_role_arn } : {}
     content {
       name         = parameter.key
       value        = parameter.value
@@ -73,13 +90,13 @@ resource "aws_db_parameter_group" "default" {
   name        = var.applicationName
   family      = "aurora-mysql8.0"
   description = "Parameter group for ${var.applicationName}"
+
   parameter {
     name         = "max_allowed_packet"
     value        = "1073741824"
     apply_method = "pending-reboot"
   }
 }
-
 
 resource "aws_db_subnet_group" "default" {
   name        = "${var.applicationName}-private"
@@ -107,6 +124,7 @@ resource "aws_rds_cluster" "prod" {
     max_capacity = var.serverlessv2_max_capacity
     min_capacity = var.serverlessv2_min_capacity
   }
+
   depends_on = [aws_security_group.rds_access]
 }
 
