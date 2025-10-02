@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5"
+      version = ">= 5"
     }
   }
 }
@@ -14,15 +14,14 @@ locals {
 data "aws_region" "current" {}
 
 data "aws_ec2_managed_prefix_list" "s3" {
-  # S3 Prefix List for Gateway Endpoint Access
   count = local.enable_s3_import ? 1 : 0
   name  = "com.amazonaws.${data.aws_region.current.name}.s3"
 }
 
 resource "random_string" "rds_password" {
   length           = 16
-  special          = true
-  override_special = "_%@"
+  special          = false
+  override_special = "_%@ "
 }
 
 data "aws_vpc" "selected" {
@@ -60,21 +59,6 @@ resource "aws_security_group" "rds_access" {
       prefix_list_ids = [data.aws_ec2_managed_prefix_list.s3[0].id]
     }
   }
-
-  dynamic "egress" {
-    for_each = var.additional_egress_rules
-    content {
-      description = egress.value.description
-      from_port   = egress.value.from_port
-      to_port     = egress.value.to_port
-      protocol    = egress.value.protocol
-      cidr_blocks = lookup(egress.value, "cidr_blocks", [])
-      ipv6_cidr_blocks = lookup(egress.value, "ipv6_cidr_blocks", [])
-      prefix_list_ids = lookup(egress.value, "prefix_list_ids", [])
-      security_groups = lookup(egress.value, "security_groups", [])
-      self = lookup(egress.value, "self", false)
-    }
-  }
 }
 
 resource "aws_rds_cluster_parameter_group" "default" {
@@ -110,14 +94,13 @@ resource "aws_db_parameter_group" "default" {
   }
 }
 
-# --- DB Subnet Group ---
+
 resource "aws_db_subnet_group" "default" {
   name        = "${var.applicationName}-private"
   description = "Subnet group for ${var.applicationName} database instances."
   subnet_ids  = var.vpc_subnet_ids
 }
 
-# --- IAM Role for S3 Import ---
 resource "aws_iam_role" "rds_s3_import" {
   count = local.enable_s3_import ? 1 : 0
   name  = "${var.applicationName}-rds-s3-import-role"
@@ -136,7 +119,6 @@ resource "aws_iam_role" "rds_s3_import" {
   })
 }
 
-# --- IAM Policy for S3 Import ---
 resource "aws_iam_policy" "rds_s3_import" {
   count       = local.enable_s3_import ? 1 : 0
   name        = "${var.applicationName}-rds-s3-import-policy"
@@ -160,14 +142,12 @@ resource "aws_iam_policy" "rds_s3_import" {
   })
 }
 
-# --- Attach Policy to Role ---
 resource "aws_iam_role_policy_attachment" "rds_s3_import" {
   count      = local.enable_s3_import ? 1 : 0
   role       = aws_iam_role.rds_s3_import[0].name
   policy_arn = aws_iam_policy.rds_s3_import[0].arn
 }
 
-# --- RDS Cluster ---
 resource "aws_rds_cluster" "prod" {
   cluster_identifier               = "${var.applicationName}-cluster"
   engine                           = "aurora-mysql"
@@ -177,7 +157,7 @@ resource "aws_rds_cluster" "prod" {
   master_username                  = var.admin_username
   master_password                  = random_string.rds_password.result
   storage_encrypted                = true
-  vpc_security_group_ids = [aws_security_group.rds_access.id]
+  vpc_security_group_ids           = [aws_security_group.rds_access.id]
   db_cluster_parameter_group_name  = aws_rds_cluster_parameter_group.default.name
   db_instance_parameter_group_name = aws_db_parameter_group.default.name
   db_subnet_group_name             = aws_db_subnet_group.default.name
@@ -189,7 +169,8 @@ resource "aws_rds_cluster" "prod" {
     min_capacity = var.serverlessv2_min_capacity
   }
 
-  depends_on = [aws_security_group.rds_access]
+  performance_insights_enabled = var.performance_insights_enabled
+  depends_on                   = [aws_security_group.rds_access]
 }
 
 resource "aws_rds_cluster_role_association" "s3_integration" {
