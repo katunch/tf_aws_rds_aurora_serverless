@@ -60,16 +60,3 @@ variable "aurora_mysql_engine_version" {
   type        = string
   default     = "8.0.mysql_aurora.3.08.2"
 }
-
-variable "additional_egress_rules" {
-  description = "Additional egress rules to add to the RDS security group"
-  type = list(object({
-    description = string
-    from_port   = number
-    to_port     = number
-    protocol    = string
-    cidr_blocks = optional(list(string), [])
-    prefix_list_ids = optional(list(string), [])
-  }))
-  default = []
-}
