@@ -73,13 +73,18 @@ resource "aws_rds_cluster_parameter_group" "default" {
   }
 
   dynamic "parameter" {
-    for_each = local.enable_s3_import ? { "aws_default_s3_role" = aws_iam_role.rds_s3_import[0].arn } : {}
+    for_each = local.enable_s3_import ? [1] : []
     content {
-      name         = parameter.key
-      value        = parameter.value
+      name         = "aws_default_s3_role"
+      value        = aws_iam_role.rds_s3_import[0].arn
       apply_method = "pending-reboot"
     }
   }
+
+  depends_on = [
+    aws_iam_role.rds_s3_import,
+    aws_iam_role_policy_attachment.rds_s3_import
+  ]
 }
 
 resource "aws_db_parameter_group" "default" {
@@ -170,7 +175,10 @@ resource "aws_rds_cluster" "prod" {
   }
 
   performance_insights_enabled = var.performance_insights_enabled
-  depends_on                   = [aws_security_group.rds_access]
+  depends_on = [
+    aws_security_group.rds_access,
+    aws_rds_cluster_parameter_group.default
+  ]
 }
 
 resource "aws_rds_cluster_role_association" "s3_integration" {
