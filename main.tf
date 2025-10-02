@@ -66,8 +66,7 @@ resource "aws_rds_cluster_parameter_group" "default" {
   }
 
   dynamic "parameter" {
-    for_each = var.enable_s3_import_integration && var.s3_import_role_arn != null ?
-      { "aws_default_s3_role" = var.s3_import_role_arn } : {}
+    for_each = (var.enable_s3_import_integration && var.s3_import_role_arn != null) ? { "aws_default_s3_role" = var.s3_import_role_arn } : {}
     content {
       name         = parameter.key
       value        = parameter.value
