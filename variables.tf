@@ -10,7 +10,7 @@ variable "vpc_id" {
 
 variable "vpc_subnet_ids" {
   description = "The IDs of the subnets to place the db instances"
-  type        = list(string)
+  type = list(string)
 }
 
 variable "admin_username" {
@@ -18,6 +18,7 @@ variable "admin_username" {
   type        = string
   default     = "admin"
 }
+
 variable "db_name" {
   description = "The name of the database"
   type        = string
@@ -46,6 +47,12 @@ variable "performance_insights_enabled" {
   description = "Enable Performance Insights for the RDS cluster. Default is false. Set at least 2ACU as minimum capacity for Performance Insights to work."
   type        = bool
   default     = false
+}
+
+variable "s3_import_bucket_names" {
+  description = "List of S3 bucket names that RDS should have access to for import operations (e.g., LOAD DATA FROM S3). If provided (length > 0), S3 import integration will be automatically enabled with all necessary IAM roles, policies, and security group rules."
+  type = list(string)
+  default = []
 }
 
 variable "aurora_mysql_engine_version" {
